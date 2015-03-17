@@ -99,7 +99,8 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        bool macroExists = MacroExists(node.Element("Alias").Value);
+                        //bool macroExists = MacroExists(node.Element("Alias").Value);
+                        bool macroExists = MacroExists(node.Element("macro").Element("Alias").Value);
                         var macros = packagingService.ImportMacros(node);
                         foreach( var macro in macros)
                         {
