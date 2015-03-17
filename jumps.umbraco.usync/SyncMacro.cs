@@ -100,7 +100,11 @@ namespace jumps.umbraco.usync
                     if (node != null)
                     {
                         //bool macroExists = MacroExists(node.Element("Alias").Value);
-                        bool macroExists = MacroExists(node.Element("macro").Element("Alias").Value);
+                        //bool test = MacroExists("Test");
+                        //var nodealias = node.Element("macro").Value;
+                        //var nodealiasTest = node.Element("alias").Value;
+                        
+                        bool macroExists = MacroExists(node.Element("alias").Value);
                         var macros = packagingService.ImportMacros(node);
                         foreach( var macro in macros)
                         {
@@ -188,7 +192,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        private static bool MacroExists(string alias)
+        public static bool MacroExists(string alias)
         {
             var macroService = ApplicationContext.Current.Services.MacroService;
             return (macroService.GetByAlias(alias) != null);
