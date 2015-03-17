@@ -99,18 +99,19 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
+                        bool macroExists = MacroExists(node.Element("Alias").Value);
                         var macros = packagingService.ImportMacros(node);
                         foreach( var macro in macros)
                         {
                             // second pass. actually make some changes...
-                            ApplyUpdates(macro, node);
+                            ApplyUpdates(macro, node, macroExists);
                         }
                     }
                 }
             }
         }
 
-        private static void ApplyUpdates(IMacro macro, XElement node)
+        private static void ApplyUpdates(IMacro macro, XElement node, bool macroExists)
         {
 
             if ( macro != null )
@@ -122,8 +123,8 @@ namespace jumps.umbraco.usync
                 macro.XsltPath = node.Element("xslt").Value;
                 macro.ScriptPath = node.Element("scriptingFile").Value;
 
-                macro.UseInEditor = 
-                    XmlDoc.GetValueOrDefault(node.Element("useInEditor"), false);
+                if (!macroExists)
+                    macro.UseInEditor = XmlDoc.GetValueOrDefault(node.Element("useInEditor"), false);
 
                 macro.CacheDuration = 
                     XmlDoc.GetValueOrDefault(node.Element("refreshRate"), 0);
@@ -134,8 +135,8 @@ namespace jumps.umbraco.usync
                 macro.CacheByPage =
                     XmlDoc.GetValueOrDefault(node.Element("cacheByPage"), false);
 
-                macro.DontRender =
-                    XmlDoc.GetValueOrDefault(node.Element("dontRender"), true);
+                if (!macroExists)
+                    macro.DontRender = XmlDoc.GetValueOrDefault(node.Element("dontRender"), true);
 
                 var macroService = ApplicationContext.Current.Services.MacroService;
 
@@ -184,6 +185,12 @@ namespace jumps.umbraco.usync
 
                 macroService.Save(macro);
             }
+        }
+
+        private static bool MacroExists(string alias)
+        {
+            var macroService = ApplicationContext.Current.Services.MacroService;
+            return (macroService.GetByAlias(alias) != null);
         }
 
         public static void AttachEvents()

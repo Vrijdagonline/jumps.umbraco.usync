@@ -21,6 +21,11 @@ using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync
 {
+    struct DictValues
+    {
+        public XElement xmlFile { get; set; }
+        public bool alreadyExists { get; set; }
+    }
     /// <summary>
     /// Syncs the Document Types in an umbraco install to the disk, 
     /// and from the disk. 
@@ -30,7 +35,8 @@ namespace jumps.umbraco.usync
     /// </summary>
     public class SyncDocType
     {
-        static Dictionary<string, XElement> updated;
+        //static Dictionary<string, XElement> updated;
+        static Dictionary<string, DictValues> updated;
 
         private static IPackagingService _packageService;
         private static IContentTypeService _contentTypeService;
@@ -112,7 +118,8 @@ namespace jumps.umbraco.usync
                 "DocumentType"));
 
             // rest the alias names
-            updated = new Dictionary<string, XElement>();
+            //updated = new Dictionary<string, XElement>();
+            updated = new Dictionary<string, DictValues>();
 
             // import stuff
             ReadFromDisk(path);
@@ -222,11 +229,15 @@ namespace jumps.umbraco.usync
             {
                 LogHelper.Info<SyncDocType>("Updating DocType {0}", () => node.Element("Info").Element("Alias").Value);
                 
+                // Quick hacky way to check if the node already exist in Umbraco
+                bool nodeExists = DocTypeExists(node.Element("Info").Element("Alias").Value);
+                
                 if (node.ImportContentType() != null)
                 {
                     if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
                     {
-                        updated.Add(node.Element("Info").Element("Alias").Value, node);
+                        //updated.Add(node.Element("Info").Element("Alias").Value, node);
+                        updated.Add(node.Element("Info").Element("Alias").Value, new DictValues { xmlFile = node, alreadyExists = nodeExists });
                     }
                     else
                     {
@@ -239,9 +250,10 @@ namespace jumps.umbraco.usync
 
         private static void SecondPassFitAndFix()
         {
-            foreach (KeyValuePair<string, XElement> update in updated)
+            //foreach (KeyValuePair<string, XElement> update in updated)
+            foreach (KeyValuePair <string, DictValues> update in updated)
             {
-                XElement node = update.Value;
+                XElement node = update.Value.xmlFile;
                 LogHelper.Debug<uSync>("Second pass [{0}]", () => update.Key);
 
                 if (node != null)
@@ -257,9 +269,10 @@ namespace jumps.umbraco.usync
                         docType.ImportContainerType(node);
 
                         LogHelper.Debug<uSync>("{0} : Structure", () => update.Key);
-                        // import structure
-                        docType.ImportStructure(node);
-
+                        
+                        // import structure only with new imported Doc Types
+                        if (!update.Value.alreadyExists)
+                            docType.ImportStructure(node);
 
                         LogHelper.Debug<uSync>("{0} : Missing Property Removal", () => update.Key);
                         // delete things that are not in our source xml?
