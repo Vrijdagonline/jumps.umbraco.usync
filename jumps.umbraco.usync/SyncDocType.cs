@@ -336,7 +336,7 @@ namespace jumps.umbraco.usync
             return docTypes;
         }
 
-        private static bool DocTypeExists(string alias)
+        public static bool DocTypeExists(string alias)
         {
             return (_contentTypeService.GetContentType(alias) != null);
         }

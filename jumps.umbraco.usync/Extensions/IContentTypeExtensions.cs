@@ -7,7 +7,6 @@ using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Core.Services;
 
-
 namespace jumps.umbraco.usync.Extensions
 {
     /// <summary>
@@ -91,17 +90,25 @@ namespace jumps.umbraco.usync.Extensions
         public static IEnumerable<IContentType> ImportContentType(this XElement node)
         {
             XElement idElement = node.Element("Info").Element("Id");
+
+            // Ophalen Doc Type
+            IContentType docType = _contentTypeService.GetContentType(node.Element("Info").Element("Alias").Value);
+
+            if (docType != null) // Als die al bestaat
+            {
+                node.Element("Info").Element("Name").Value = docType.Name; // Neem bestaande naam over
+            }
+
             try
             {
                 IEnumerable<IContentType> imported = _packageService.ImportContentTypes(node, false, raiseEvents: false);
                 return imported;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                LogHelper.Error<SyncDocType>( string.Format("Failed to import {0}", node.Element("Info").Element("Alias").Value), ex);
+                LogHelper.Error<SyncDocType>(string.Format("Failed to import {0}", node.Element("Info").Element("Alias").Value), ex);
                 return null;
             }
-
         }
 
 
@@ -344,6 +351,11 @@ namespace jumps.umbraco.usync.Extensions
                 path = string.Format("{0}\\{1}", path, helpers.XmlDoc.ScrubFile(item.Alias));
             }
             return path;
+        }
+
+        public static bool DocTypeExists(string alias)
+        {
+            return (_contentTypeService.GetContentType(alias) != null);
         }
     }
 }
